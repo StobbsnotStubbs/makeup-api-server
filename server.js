@@ -1,71 +1,104 @@
 "use strict";
 
-const express = require('express');
-const cors = require('cors');
-const axios = require('axios');
-require('dotenv').config();
-const mongoose = require('mongoose');
+const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
+const mongoose = require("mongoose");
+const axios = require("axios");
 
 const app = express();
 app.use(cors());
+app.use(express.json());
+
 const PORT = process.env.PORT;
 
-//connect my node app to makeup db in Mongodb server
-mongoose.connect('mongodb://localhost:27017/productsapi', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-  .then(() => {
-    console.log('Connected to database!');
-  })
-  .catch((error) => {
-    console.error('Error connecting to database:', error);
-  });
 
-// Collection: Schema and model
-// Schema: determine the shape of our data || blueprint or template for our collection
+
+
+
+
+
+mongoose.connect("mongodb://127.0.0.1:27017/productsapi")
+.then(()=>console.log("DB Connected"))
+.catch((err)=>console.log(err))
+
+
+
+
 const productSchema = new mongoose.Schema({
+  name: String,
   brand: String,
   price: String,
-  imageURL: String,
+  imageUrl: String,
   description: String,
 });
 
-// Schema: drawing phase
-// Model: creation phase
-const makeupProduct = mongoose.model('makeupProduct', productSchema);
+const productModel = mongoose.model("product", productSchema);
 
-// Seed our database
-function seedmakeupProduct() {
-  const eyeShadow = new makeupProduct({
-    brand: "Maybelline",
-    price: "7",
-    imageURL: "testesttestestest",
-    description: "Gans on your eyes like",
+function seedProductCollection() {
+  const bronzer = new productModel({
+    name: "Hi-Light Booster Bronzer",
+    brand: "maybelline",
+    price: "14.99",
+    imageUrl:
+      "https://d3t32hsnjxo7q6.cloudfront.net/i/991799d3e70b8856686979f8ff6dcfe0_ra,w158,h184_pa,w158,h184.png",
+    description:
+      "Maybelline Face Studio Master Hi-Light Light Boosting bronzer formula has an expert balance of shade + shimmer illuminator for natural glow. Skin goes soft-lit with zero glitz.",
   });
-  eyeShadow.save();
+  const contour = new productModel({
+    name: "Contour Kit",
+    brand: "maybelline",
+    price: "15.99",
+    imageUrl:
+      "https://d3t32hsnjxo7q6.cloudfront.net/i/4f731de249cbd4cb819ea7f5f4cfb5c3_ra,w158,h184_pa,w158,h184.png",
+    description:
+      "Maybelline Facestudio Master Contour Kit is the ultimate on the go all-in-one palette, with contouring brush included.  Define and highlight in a New York minute with this effortless 3-step face contouring kit.",
+  });
+  const blush = new productModel({
+    name: "truBLEND Blush in Light Rose",
+    brand: "maybelline",
+    price: "13.99",
+    imageUrl:
+      "https://d3t32hsnjxo7q6.cloudfront.net/i/0b8787d62ced45700c0693b869645542_ra,w158,h184_pa,w158,h184.png",
+    description:
+      "Never stop blushing with CoverGirl New truBLEND blush! Features:New marbled baked formulaUltra-blendable and delivers a beautiful, multi-toned result Designed to fit light, medium and deep skin tones alike",
+  });
+  bronzer.save();
+  contour.save();
+  blush.save();
 }
 
-seedmakeupProduct();
+seedProductCollection();
 
-app.get('/', homeHandler);
+// Routes
+app.get("/", homePageHandler);
+app.get("/productsapi", getAPIProductsHandler);
+app.get("/product", getProductsHandler);
 
-app.get('/productsapi', (req, res) => {
-  const url = 'http://makeup-api.herokuapp.com/api/v1/products.json?brand=maybelline';
-  axios.get(url)
-    .then(response => {
-      res.send(response.data);
-    })
-    .catch(error => {
-      console.log(error);
-      res.send('An error occurred while fetching the data.');
-    });
-});
-
-function homeHandler (req,res) {
-  res.status(200).send('all good');
+// Routes Handlers
+function homePageHandler(req, res) {
+  res.send("server is alive");
 }
 
-app.listen(PORT, ()=>{
-  console.log(`Listening on ${PORT}`);
+async function getAPIProductsHandler(req, res) {
+  let productsapi = await axios.get(
+    "http://makeup-api.herokuapp.com/api/v1/products.json?brand=maybelline"
+  );
+  res.status(200).send(productsapi.data);
+}
+
+async function getProductsHandler(req, res) {
+  let products = await productModel.find({});
+  res.send(products);
+  // productModel.find({},function(err,products){
+  //     if(err) {
+  //         console.log('did not work')
+  //     } else {
+  //         res.send(products);
+  //     }
+  // })
+}
+
+app.listen(PORT, () => {
+  console.log(`Listening on PORT ${PORT}`);
 });
