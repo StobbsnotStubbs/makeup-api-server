@@ -5,6 +5,7 @@ const cors = require("cors");
 require("dotenv").config();
 const mongoose = require("mongoose");
 const axios = require("axios");
+const bodyParser = require('body-parser')
 
 const app = express();
 app.use(cors());
@@ -68,7 +69,28 @@ function seedProductCollection() {
   blush.save();
 }
 
-seedProductCollection();
+//seedProductCollection();
+
+
+// Use body-parser middleware to parse request body
+app.use(bodyParser.json());
+
+// Define the "/product" endpoint for creating a new product
+app.post('/product', (req, res) => {
+  const newProduct = req.body;
+  productsapi.products().then(products => {
+    // Generate a unique ID for the new product
+    newProduct.id = products.length + 1;
+    // Add the new product to the products array
+    products.push(newProduct);
+    // Send response to the client with all products that contain the new one
+    const result = products.filter(product => product.id === newProduct.id || product.name === newProduct.name);
+    res.status(201).send(result);
+  }).catch(err => {
+    console.error(err);
+    res.status(500).send('Internal Server Error');
+  });
+});
 
 // Routes
 app.get("/", homePageHandler);
